@@ -18,7 +18,7 @@ automated strategy — from gathering live market data, to computing trading sig
 paper and live trades — with the shared risk and execution machinery a quant desk would build,
 pointed entirely at Polymarket.
 
-It is not a script. It's a Rust workspace with a live execution engine, a deterministic
+It is not a script. It's a complete system: a live execution engine, a deterministic
 recording-and-replay backtester, a parameter optimizer, and a mobile + web control panel.
 
 ## What it delivers
@@ -27,8 +27,8 @@ recording-and-replay backtester, a parameter optimizer, and a mobile + web contr
   same data, execution, and risk layers (eight are already implemented).
 - 🔁 **Record → replay → optimize** — the same strategy code runs live, replays recorded sessions
   tick-for-tick, and feeds a parameter optimizer, so what you backtest is exactly what you trade.
-- 🤝 **Native Polymarket integration** — trades the Polymarket CLOB directly and redeems settled
-  positions through the **Builder relayer**, built around Polymarket's own event series and API.
+- 🤝 **Native Polymarket integration** — trades directly on Polymarket and automatically claims
+  settled winnings, built around Polymarket's own crypto event series.
 - 📈 **Continuous automated flow** on the crypto up-or-down series as a by-product of running
   signal-driven strategies around the clock.
 
@@ -52,7 +52,7 @@ A builders grant lets us harden and extend this framework — more strategies, m
 | Mobile app | Secure login |
 |---|---|
 | <img src="assets/03-dashboard-mobile.png" width="260"/> | <img src="assets/01-login.png" width="360"/> |
-| Ships as an Android app (APK) — monitor every book from anywhere. | Argon2-hashed credentials with session auth. |
+| Ships as a mobile app — monitor every book from anywhere. | Password-protected, secure access. |
 
 ---
 
@@ -62,24 +62,25 @@ Polytrader is built in layers. A strategy is just the thin signal layer on top �
 it is shared, tested infrastructure that every strategy reuses.
 
 ### 📡 Live market-data gathering
-A unified data layer collects and caches everything a strategy needs in real time: Polymarket CLOB
-order books (push-based WebSocket), crypto spot prices (RTDS / Binance), 1-minute klines, and
-per-event strike tracking — all behind one `MarketDataProvider` abstraction.
+A unified data layer continuously collects and caches everything a strategy needs in real time:
+live order books, crypto spot prices, recent price history, and each event's strike — all behind
+one clean interface, so strategies never deal with raw feeds.
 
 ### 🧮 Trading-signal calculation
-Strategies consume that data to compute entry/exit signals — option-pricing fair value, spot-vs-strike
-momentum, order-book imbalance, arbitrage edges, and more. The layer is **strategy-agnostic**: signals
-are pure functions of market data, so they behave identically live and in replay. *(Eight strategies
-are implemented today; adding another is a focused, isolated change.)*
+Strategies turn that data into entry/exit signals — fair-value option pricing, price-vs-strike
+momentum, order-book imbalance, arbitrage edges, and more. The layer is **strategy-agnostic** and
+its signals are derived purely from market data, so they behave identically live and in replay.
+*(Eight strategies are implemented today; adding another is a focused, isolated change.)*
 
 ### ⚙️ Paper & live execution
-One execution path runs against either an **in-memory / paper wallet** or the **live Polymarket CLOB**
-— same code, same accounting, selected by config. Orders are GTD with server-side expiry (a crashed
-bot's orders die on their own), and settled positions are redeemed through the Builder relayer.
+One execution path runs against either a **paper account** or a **live Polymarket account** — same
+code, same accounting, chosen by a single config switch. Live orders carry a built-in expiry so a
+crashed bot leaves nothing dangling, and settled positions are claimed automatically.
 
 ### 🛡️ Shared core components
 Reused across every strategy: **stop-loss** and **adaptive trailing stops**, risk-based position
-sizing, an API **circuit breaker**, NaN/∞ order guards, and exchange-minimum clamping.
+sizing, automatic recovery from data/connectivity hiccups, and safeguards that block malformed or
+too-small orders before they reach the market.
 
 ---
 
@@ -105,61 +106,65 @@ trend), redemptions, and `🚨 termination` events as they happen, tagged by str
 
 ## Recording, replay & optimization
 
-This is the backbone that makes the framework trustworthy — and the part a grant would most help us extend.
+This is the backbone that makes the framework trustworthy.
 
-- **Recording.** While trading live, every tick is captured to a compact, deduplicated
-  `rkyv + zstd` session — full order books, spot prices, klines, time-to-maturity, strike, and the
-  strategy's own decisions. Sessions chunk automatically and survive data outages, building a
-  growing, replayable history of real market conditions.
+- **Recording.** While trading live, every market tick is captured to a compact recording — full
+  order books, spot prices, recent price history, timing, strike, and the strategy's own decisions.
+  Recordings roll over automatically and survive data outages, building a growing, replayable
+  history of real market conditions.
 
-- **Replay.** Recorded sessions are replayed **tick-for-tick** through the *same*
-  `MarketDataProvider` trait the live engine uses. There is no separate backtest code path, so a
-  strategy cannot behave differently in test than in production — the single biggest source of
-  backtest/live divergence is eliminated by construction.
+- **Replay.** Recorded sessions are replayed **tick-for-tick** through the *exact same code path*
+  the live engine uses. There is no separate backtest code, so a strategy cannot behave differently
+  in test than in production — the single biggest source of backtest/live divergence is eliminated
+  by design.
 
-- **Optimization.** A Particle-Swarm and grid optimizer searches strategy parameters over recorded
-  sessions, with:
-  - **Overfitting resistance** — explicit validation / test splits and per-hour reporting, so a
-    parameter set has to generalise, not just fit one window.
-  - **Risk-adjusted objectives** — optimise for Sharpe / Sortino / Calmar with max-drawdown
-    constraints, not just raw profit.
-  - **Speed** — an in-memory wallet bypasses the database on the hot path for a **~8× speedup**, with
-    parallel session loading across cores, making large sweeps practical.
+- **Optimization.** An optimizer automatically searches strategy parameters over recorded data, with:
+  - **Overfitting resistance** — separate validation and test windows (and per-hour reporting), so a
+    parameter set has to generalise, not just fit one period.
+  - **Risk-adjusted objectives** — tune for risk-adjusted return and drawdown limits, not just raw profit.
+  - **Speed** — runs far faster than naive backtesting thanks to a faster-than-light in-memory portfolio framework, making large parameter sweeps practical.
 
 Together these turn "I think this strategy works" into "this parameter set was validated on real
 recorded Polymarket data and is the exact code now trading live."
 
 ---
 
-## Architecture
+## How it fits together
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     Polytrader workspace (Rust)              │
-├───────────────┬───────────────┬───────────────┬─────────────┤
-│ trading_bot   │ optimizer      │ core_services │ web_ui      │
-│ strategies +  │ PSO / grid +   │ market data,  │ Flutter +   │
-│ live engine   │ replay engine  │ CLOB, wallets │ Axum API    │
-└───────┬───────┴───────┬────────┴───────┬───────┴─────────────┘
-        │               │                │
-        └──── MarketDataProvider trait ──┘   ← one abstraction,
-              live feed  ⇆  deterministic replay   two implementations
-                              │
-                  poly-clob-rs  →  Polymarket CLOB + Builder relayer
-                  RTDS / Binance →  real-time crypto spot
+        ┌────────────────────────────────────────────────┐
+        │   Control panel (web + mobile)  ·  Telegram bot │   monitor & manage
+        └───────────────────────┬────────────────────────┘
+                                 │
+   ┌──────────────┬─────────────┴──────────────┬───────────────────┐
+   │  Strategies  │   Recording · replay ·      │  Paper & live     │
+   │  (signals)   │   optimization              │  execution        │
+   └──────────────┴─────────────┬──────────────┴───────────────────┘
+                                 │
+                 ┌───────────────┴────────────────┐
+                 │     Unified market-data layer   │   one feed →
+                 │   live trading  OR  replay      │   same strategy code
+                 └───────────────┬────────────────┘
+                                 │
+                Polymarket markets  +  real-time crypto prices
 ```
 
-**Stack:** Rust (async / Tokio), PostgreSQL + Diesel, Axum, Flutter, `poly-clob-rs` (Polymarket
-CLOB client), `rkyv` / `zstd` (replay), Argon2 (auth).
+The key design choice: one market-data layer feeds the *same* strategy code whether it's trading
+live or replaying history — so what you research is exactly what you trade.
 
 ---
 
 ## Roadmap — what a grant unlocks
 
-- **Breadth:** run the framework across the full BTC / ETH / SOL / XRP × 5m / 15m / hourly grid.
-- **Uptime:** hardened deployment + a live loss kill-switch so strategies run continuously and safely.
+- **New market types:** only crypto markets are fully supported today — the same data → signal →
+  execution → risk pipeline can be extended to other Polymarket markets driven by external insight
+  feeds (news, data, sentiment).
+- **Multi-account & multi-tenant SaaS:** today each part of the platform manages a single
+  account/bot at a time. The whole stack — dashboard, mobile and Telegram control, recording, and
+  the optimization tooling — can become a hosted, multi-tenant service, letting other Polymarket
+  traders run, monitor, manage, and optimize their own bots from one place.
 - **Research:** deeper replay tooling and a larger optimization harness on top of the recording pipeline.
-- **Openness:** publish the replay format and optimizer harness as reusable tooling for the
+- **Openness:** publish the infrastructure as an open-sourceset of reusable tooling for the
   Polymarket builder community.
 
 ---
