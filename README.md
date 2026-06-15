@@ -18,14 +18,14 @@ automated strategy — from gathering live market data, to computing trading sig
 paper and live trades — with the shared risk and execution machinery a quant desk would build,
 pointed entirely at Polymarket.
 
-It is not a script. It's a complete system: a live execution engine, a deterministic
+It's a complete system: a live execution engine, a deterministic
 recording-and-replay backtester, a parameter optimizer, and a mobile + web control panel.
 
 ## What it delivers
 
-- 🧩 **A reusable, strategy-agnostic framework**, not a one-off bot — new strategies plug into the
+- 🧩 **A reusable, strategy-agnostic framework**, where new strategies plug into the
   same data, execution, and risk layers (eight are already implemented).
-- 🔁 **Record → replay → optimize** — the same strategy code runs live, replays recorded sessions
+- 🔁 **Record → replay → optimize**: the same strategy code runs live, replays recorded sessions
   tick-for-tick, and feeds a parameter optimizer, so what you backtest is exactly what you trade.
 - 🤝 **Native Polymarket integration** — trades directly on Polymarket and automatically claims
   settled winnings, built around Polymarket's own crypto event series.
