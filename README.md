@@ -12,7 +12,7 @@
 
 ## What it is
 
-**Polytrader** is a complete, reusable trading framework for Polymarket's short-horizon crypto
+**Polytrader** is a complete, reusable trading framework for Polymarket, currently supporting short-horizon crypto
 **"up-or-down"** events (5-minute, 15-minute, hourly). It covers the full lifecycle of an
 automated strategy (from gathering live market data, to computing trading signals, to executing
 paper and live trades) with the shared risk and execution machinery a quant desk would build,
@@ -55,10 +55,10 @@ trading system is the proof that the infrastructure works; the funded deliverabl
 | ![Account detail](assets/04-account-detail.png) | ![Bot detail](assets/05-bot-detail.png) |
 | P&L history chart, open positions, and a full transaction log (buys / redemptions), here on a live BTC 15m book. | One bot orchestrating BTC/ETH/SOL/XRP across two strategies, with per-strategy live P&L. |
 
-| Mobile app | Secure login |
-|---|---|
-| <img src="assets/03-dashboard-mobile.png" width="260"/> | <img src="assets/01-login.png" width="360"/> |
-| Ships as a mobile app, monitor every book from anywhere. | Password-protected, secure access. |
+| Mobile app |
+|---|
+| <img src="assets/03-dashboard-mobile.png" width="260"/> |
+| Ships as a mobile app, monitor every book from anywhere. |
 
 ---
 
