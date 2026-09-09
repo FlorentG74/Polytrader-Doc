@@ -4,7 +4,7 @@
 
 ### An automated, quant-grade trading framework for short-horizon crypto prediction markets
 
-*Built in Rust · Battle-tested live on BTC / ETH / SOL / XRP up-or-down series · Proposed to migrate fully to Limitless*
+*Built in Rust · Battle-tested live on BTC / ETH / SOL / XRP up-or-down series · Proposed to migrate fully to your exchange*
 
 </div>
 
@@ -19,37 +19,37 @@ a web + mobile + Telegram control panel. It has been **running live with real ca
 against Polymarket, as a private, closed-source system that Polymarket does not sponsor, support, or
 endorse in any way.
 
-**What I'm asking Limitless to fund:** porting this framework to Limitless and dedicating it there —
+**What I'm asking you to fund:** porting this framework to a new exchange and dedicating it there —
 open-sourced as public builder tooling, and operated as a hosted multi-tenant service so other API
-traders can run bots on Limitless without rebuilding this stack. The live system is the proof that the
+traders can run bots on without rebuilding this stack. The live system is the proof that the
 infrastructure works; the grant deliverable is the public good on top of it.
 
-**Why it fits Limitless specifically.** Limitless's core product *is* the market type this framework was
-purpose-built for: nonstop hourly and daily crypto up-or-down markets, on a CLOB, on Base, with a REST +
-WebSocket API and a Rust SDK. The mapping is close to one-for-one — the strategies, the signals, the
-risk layer, and the replay harness all carry over. There is no comparable open framework in the
-Limitless ecosystem today.
+**Why it fits.** The framework was purpose-built for exactly the product line that defines a modern
+crypto prediction market: continuous short-horizon up-or-down markets on an order book, reachable over
+a REST + WebSocket API. Wherever that shape exists, the mapping is close to one-for-one — the
+strategies, the signals, the risk layer, and the replay harness all carry over unchanged. Most
+prediction-market ecosystems have no comparable open framework today.
 
 ---
 
-## What Limitless gets
+## What the exchange gets
 
 - 📈 **Continuous automated flow, around the clock.** Nine strategy books already run 24/7 across four
-  assets and both pricing models. Pointed at Limitless, that is signal-driven volume on the hourly and
-  daily crypto series every hour, not just during human trading hours.
+  assets and both pricing models. Pointed at your venue, that is signal-driven volume on the
+  short-horizon crypto series every hour, not just during human trading hours.
 - 💧 **Maker liquidity, not just taker volume.** The execution layer places priced limit orders with
-  built-in expiry, which is exactly the behaviour Limitless's maker rebates and LP rewards are designed
-  to attract. Automated books quote consistently on both sides of short-horizon markets, tightening
-  books on the newest slots — the ones that are thinnest at open.
+  built-in expiry, which is exactly the behaviour maker-rebate and LP-reward programs are designed to
+  attract. Automated books quote consistently on both sides of short-horizon markets, tightening books
+  on the newest slots — the ones that are thinnest at open.
 - 🤝 **A funnel for API traders.** The single biggest barrier to a quant trading a new venue is the six
   months of undifferentiated infrastructure — feeds, execution, accounting, backtesting — before the
   first strategy can be evaluated. Shipping that as open tooling plus a hosted service means an API
-  trader can go from "curious about Limitless" to a live, backtested bot in days. **Every trader onboarded
-  this way is recurring liquidity and recurring volume.**
-- 🧰 **A maintained public framework** carrying the Limitless SDK as a first-class integration, with docs
-  and example strategies — a reference implementation the ecosystem can point new builders at.
-- 🔬 **Real usage data.** The recording pipeline captures full order books tick-by-tick; replayable
-  history of Limitless market microstructure is useful to Limitless itself.
+  trader can go from "curious about this venue" to a live, backtested bot in days. **Every trader
+  onboarded this way is recurring liquidity and recurring volume.**
+- 🧰 **A maintained public framework** carrying your API as a first-class integration, with docs and
+  example strategies — a reference implementation you can point new builders at.
+- 🔬 **Real usage data.** The recording pipeline captures full order books tick-by-tick; a replayable
+  history of your own market microstructure is useful to you as well as to traders.
 
 ---
 
@@ -60,7 +60,7 @@ Limitless ecosystem today.
 > account** trading alongside paper books.
 >
 > *These screenshots are from the current Polymarket deployment — the working proof that the framework
-> is real and in production. Under this grant, the same panels get pointed at Limitless.*
+> is real and in production. Under this grant, the same panels get pointed at your markets.*
 
 ![Dashboard](assets/02-dashboard-desktop.png)
 *Every strategy book at a glance: live balances, unrealised P&L, open positions, and running-bot health.*
@@ -81,13 +81,14 @@ Limitless ecosystem today.
 
 Polytrader is built in layers. A strategy is just the thin signal layer on top; everything below
 it is shared, tested infrastructure that every strategy reuses. **Only the bottom layer is venue-specific**,
-which is what makes the migration to Limitless a port rather than a rewrite.
+which is what makes the migration a port rather than a rewrite.
 
 ### 📡 Live market-data gathering
 A unified data layer continuously collects and caches everything a strategy needs in real time:
 live order books, crypto spot prices, recent price history, and each event's strike, all behind
-one clean interface, so strategies never deal with raw feeds. On Limitless this becomes the REST +
-WebSocket feed (price, orderbook, position and market-lifecycle events) behind the same interface.
+one clean interface, so strategies never deal with raw feeds. On a new venue this becomes that venue's
+REST + WebSocket feed (price, orderbook, position and market-lifecycle events) behind the same
+interface — nothing above it changes.
 
 ### 🧮 Trading-signal calculation
 Strategies turn that data into entry/exit signals: fair-value option pricing, price-vs-strike
@@ -99,8 +100,8 @@ isolated change.)*
 ### ⚙️ Paper & live execution
 One execution path runs against either a **paper account** or a **live funded account**; same code,
 same accounting, chosen by a single config switch. Live orders carry a built-in expiry so a crashed
-bot leaves nothing dangling, and settled positions are redeemed automatically. Against a CLOB this is
-limit-order-native — the venue-facing adapter is the piece the grant replaces with the Limitless SDK.
+bot leaves nothing dangling, and settled positions are redeemed automatically. Against an order book
+this is limit-order-native — the venue-facing adapter is the piece the grant replaces with your API.
 
 ### 🛡️ Shared core components
 Reused across every strategy: **stop-loss** and **adaptive trailing stops**, risk-based position
@@ -176,11 +177,11 @@ recorded market data and is the exact code now trading live."
                  └──────────────┬─────────────────┘
                                 │
                     ┌───────────┴────────────┐
-                    │  Venue adapter          │  ← the only venue-specific layer
-                    │  (Limitless SDK)        │     today: Polymarket
+                    │  Venue adapter         │  ← the only venue-specific layer
+                    │  (exchange API)        │     today: Polymarket
                     └───────────┬────────────┘
                                 │
-              Limitless markets  +  real-time crypto prices
+                 Your markets  +  real-time crypto prices
 ```
 
 Two design choices carry the whole proposal: one market-data layer feeds the *same* strategy code
@@ -191,49 +192,49 @@ everything above the venue adapter is venue-agnostic (so migrating is a port, no
 
 ## Roadmap: what a grant unlocks
 
-Deliverables are ordered so the **Limitless migration and the public-good work come first**.
+Deliverables are ordered so the **migration and the public-good work come first**.
 
-- **Milestone 1: Migrate to Limitless.** Implement the Limitless venue adapter (REST + WebSocket data,
-  CLOB order placement and cancellation, position redemption, split/merge) against the Rust SDK,
-  re-validate the eight existing strategies on recorded Limitless data, and run the framework live on
-  Limitless with real capital. *What Limitless gets:* an experienced automated trader's full book of
-  strategies quoting and trading on the hourly and daily crypto series.
+- **Milestone 1: Migrate to your exchange.** Implement the venue adapter (REST + WebSocket data, order
+  placement and cancellation, position redemption, and any split/merge or settlement primitives) against
+  your API and SDK, re-validate the eight existing strategies on freshly recorded data from your
+  markets, and run the framework live with real capital. *What you get:* an experienced automated
+  trader's full book of strategies quoting and trading on your short-horizon crypto series.
 - **Milestone 2: Open the infrastructure.** Publish the data, execution, risk, and record/replay layers
-  as open-source reusable tooling — Limitless-first, with documentation and example strategies.
-  *What Limitless gets:* a maintained public framework, and a credible answer to "I'd like to run a bot
-  on Limitless, where do I start?"
+  as open-source reusable tooling — your-venue-first, with documentation and example strategies.
+  *What you get:* a maintained public framework, and a credible answer to "I'd like to run a bot here,
+  where do I start?"
 - **Milestone 3: Multi-tenant service.** Today each part of the platform manages a single account/bot at
   a time. The whole stack (dashboard, mobile and Telegram control, recording, and the optimization
   tooling) becomes a hosted, multi-tenant service so other traders can run, monitor, and optimize their
-  own Limitless bots from one place, without operating any infrastructure. *What Limitless gets:* a
-  direct onboarding funnel for API traders — each one adding maker liquidity and volume on Limitless.
+  own bots from one place, without operating any infrastructure. *What you get:* a direct onboarding
+  funnel for API traders — each one adding maker liquidity and volume on your books.
 - **Milestone 4: New market types.** Beyond crypto up/down, the same data → signal → execution → risk
-  pipeline extends to Limitless's other markets, including multi-outcome NegRisk / category markets,
-  driven by external insight feeds (news, data, sentiment). *What Limitless gets:* automated flow
-  beyond the crypto series.
+  pipeline extends to your other markets, including multi-outcome and category markets, driven by
+  external insight feeds (news, data, sentiment). *What you get:* automated flow beyond the crypto
+  series.
 - **Ongoing: Research and liquidity.** Deeper replay tooling and a larger optimization harness on top of
-  a growing recorded history of Limitless microstructure — plus dedicated market-making books aimed at
-  the maker-rebate and LP-reward programs.
+  a growing recorded history of your market microstructure — plus dedicated market-making books aimed
+  at your maker-rebate and liquidity-reward programs.
 
 *Use of funds and timeline:* the grant would be scoped to the milestones above; the specific amount,
-tranches, and delivery dates are to be agreed with the Limitless team.
+tranches, and delivery dates are to be agreed with your team.
 
 ---
 
 ## Honest status
 
-- The framework is **live and profitable-in-production infrastructure today, on Polymarket** — a private
-  deployment, not open-source, and in no way affiliated with, supported by, or endorsed by Polymarket.
-- Nothing is live on Limitless yet. Milestone 1 is exactly that work, and it is a port of a proven
+- The framework is **live, production infrastructure today, on Polymarket** — a private deployment, not
+  open-source, and in no way affiliated with, supported by, or endorsed by Polymarket.
+- Nothing runs on your venue yet. Milestone 1 is exactly that work, and it is a port of a proven
   system, not a greenfield build.
-- The grant is what makes it worth **dedicating** this framework to Limitless — migrating it, opening
-  it, and running it as ecosystem infrastructure rather than a private edge.
+- The grant is what makes it worth **dedicating** this framework to your exchange — migrating it,
+  opening it, and running it as ecosystem infrastructure rather than a private edge.
 
 ---
 
 <div align="center">
 
-**Polytrader** — bringing quant-desk infrastructure, and the traders who need it, to Limitless.
+**Polytrader** — bringing quant-desk infrastructure, and the traders who need it, to your exchange.
 
 📧 FlorentG74@proton.me
 
